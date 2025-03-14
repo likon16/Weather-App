@@ -1,5 +1,5 @@
 
-
+//Acces All The Elements Throush Their id , class, attribute
 
 const userTab=document.querySelector("[data-userWeather]");
 const searchTab=document.querySelector("[data-searchWeather]");
@@ -13,11 +13,10 @@ const loadingScreen =document.querySelector(".loading-container");
 
 const userInfoContainer=document.querySelector(".user-info-container");
 
-// const  paraMeterContainer =document.querySelector(".parameter-container");
 
-// const grantAccessButton =document.querySelector("[data-grantaccess]");
 
-// intially variables need?
+//Now here i create the 2 tab 1 is for user own weather Information tab and Another is for searching Tab
+
  let  currentTab=userTab;
  
  const API_KEY = "d1845658f92b31c64bd94f06f7188c9c";
@@ -42,7 +41,7 @@ const userInfoContainer=document.querySelector(".user-info-container");
         else{
             searchForm.classList.remove("active");
             userInfoContainer.classList.remove("active");
-            // grantAccessContainer.classList.remove("active");
+            grantAccessContainer.classList.remove("active");
             
             getfromSessionStorage();
 
@@ -51,6 +50,8 @@ const userInfoContainer=document.querySelector(".user-info-container");
     }
  }
 
+
+ //Switch tab Functionlity
 
  userTab.addEventListener("click",()=> {
 
@@ -65,47 +66,71 @@ searchTab.addEventListener("click",() => {
     switchTab(searchTab);
 })
 
-function getfromSessionStorage(){
-    const localCoordinates= sessionStorage.getItem("user-coordinates");
-    if(localCoordinates){
+function getfromSessionStorage() {
+    const localCoordinates = sessionStorage.getItem("user-coordinates");
+
+    if (!localCoordinates) {
+        // If no coordinates are found, show the grant location container
         grantAccessContainer.classList.add("active");
- 
-    }
-    else{
+    } else {
+        // Parse and fetch weather info
         const coordinates = JSON.parse(localCoordinates);
-    fetchUserWeatherInfo(coordinates);
- 
-        
+        fetchUserWeatherInfo(coordinates);
     }
-
 }
-async function fetchUserWeatherInfo(coordinates){
-const {lat, lon} =coordinates;
 
-    //make grandcontainer invisible
+//User Weather Iformation Fetch Through The API
+
+async function fetchUserWeatherInfo(coordinates) {
+    const { lat, lon } = coordinates;
+
+    // Hide grant access container, search form, and show loading
     grantAccessContainer.classList.remove("active");
-
+    searchForm.classList.remove("active");  // 🔥 HIDE SEARCH FORM
     loadingScreen.classList.add("active");
 
-    //api call
-
-    try{
-
+    try {
         const response = await fetch(
             `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
-          );
-        const data =JSON.response();
+        );
+        
+        const data = await response.json();
+        
         loadingScreen.classList.remove("active");
         userInfoContainer.classList.add("active");
 
         renderWeatherInfo(data);
-    }
-    catch(err){
-
+    } catch (err) {
         loadingScreen.classList.remove("active");
-        console.log("err")
+        console.log("Error fetching user location weather:", err);
+    }
+}
 
 
+
+//Searching tab Weather Iformation Fetch Through The API
+
+
+async function fetchSearchWeatherInfo(city) {
+    loadingScreen.classList.add("active");
+    userInfoContainer.classList.remove("active");
+    grantAccessContainer.classList.remove("active");
+
+    try {
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
+        );
+
+        const data = await response.json();
+        loadingScreen.classList.remove("active");
+        userInfoContainer.classList.add("active");
+        
+        renderWeatherInfo(data);
+    } catch (error) { // FIXED!
+        console.log("Error fetching weather info:", error);
+        loadingScreen.classList.remove("active");
+        userInfoContainer.classList.add("active");
+        userInfoContainer.innerHTML = `<p>Unable to fetch weather info</p>`;
     }
 }
 
@@ -154,22 +179,26 @@ function getLocation(){
 else{
     //show an alert for no geolocation support available
 
-    console.log("geolocation is not supported by this browser");
+    alert("geolocation is not supported by this browser");
 }
 }
+
+
+
 
 function showPosition(position) {
+    const userCoordinates = {
+        lat: position.coords.latitude,
+        lon: position.coords.longitude,
+    };
 
-const userCoordinates={
-    lat: position.coords.latitude,
-    lon: position.coords.longitude,
+    sessionStorage.setItem("user-coordinates", JSON.stringify(userCoordinates));
+    fetchUserWeatherInfo(userCoordinates);
 
+    // 🔥 Hide search form after location is granted
+    searchForm.classList.remove("active"); 
 }
 
-sessionStorage.setItem("user-coordinates",JSON.stringify(userCoordinates));
-fetchUserWeatherInfo(userCoordinates);
-
-}
 
 
 const grantAccessBtn =document.querySelector("[data-grantAccess]");
@@ -177,8 +206,6 @@ grantAccessBtn.addEventListener("click",getLocation);
 
 
 const searchInput  =document.querySelector("[data-searchInput]");
-
-
 searchForm.addEventListener("submit", (e)=>{
     e.preventDefault();
     let cityName= searchInput.value;
@@ -192,31 +219,9 @@ searchForm.addEventListener("submit", (e)=>{
 });
 
 
-async  function fetchSearchWeatherInfo(city) {
-    loadingScreen.classList.add("active");
-    userInfoContainer.classList.remove("active");
-    grantAccessContainer.classList.remove("active");
 
 
-    try{
-
-        const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
-          );
-const data =await response.json();
-loadingScreen.classList.remove("active");
-userInfoContainer.classList.add("active");
-renderWeatherInfo(data);
 
 
-    }
-    catch{
-        console.log("Error fetching weather info",error);
-        loadingScreen.classList.remove("active");   
-        userInfoContainer.classList.add("active");
-        userInfoContainer.innerHTML =`<p>Unable to fetch weather info</p>`
-
-    }
-}
 
 
